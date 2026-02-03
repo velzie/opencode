@@ -66,9 +66,9 @@ Based on investigation of the OpenCode repository and example PRs, here's what I
 
 ### 3. Real Example: OpenRouter and Vercel Providers
 
-These are REAL examples from the codebase showing the standard OpenCode-only pattern:
+These are REAL examples from the codebase showing the standard OpenCode-only pattern (search for these in `packages/opencode/src/provider/provider.ts`):
 
-**OpenRouter (provider.ts lines 325-335):**
+**OpenRouter:**
 ```typescript
 openrouter: async () => {
   return {
@@ -83,7 +83,7 @@ openrouter: async () => {
 },
 ```
 
-**Vercel (provider.ts lines 336-346):**
+**Vercel:**
 ```typescript
 vercel: async () => {
   return {
@@ -117,7 +117,7 @@ vercel: async () => {
 1. **Most providers are added with a SINGLE PR to OpenCode only**
    - Provider does NOT need to be on models.dev to work
    - Faster process (1-3 days vs 1-2 weeks)
-   - Examples: openrouter, vercel (see provider.ts lines 325-346)
+   - Examples: openrouter, vercel (search in provider.ts)
 
 2. **Two PRs (models.dev + OpenCode) is RARE**
    - Only for major providers you want listed on https://models.dev website

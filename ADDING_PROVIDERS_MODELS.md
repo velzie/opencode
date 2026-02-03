@@ -109,8 +109,8 @@ const CUSTOM_LOADERS: Record<string, CustomLoader> = {
 ```
 
 **Real examples in the codebase:**
-- `openrouter` - Lines 325-335
-- `vercel` - Lines 336-346
+- `openrouter` provider (search for "openrouter:" in provider.ts)
+- `vercel` provider (search for "vercel:" in provider.ts)
 - Look at `packages/opencode/src/provider/provider.ts` for more
 
 2. **Add auth hints** in `packages/opencode/src/cli/cmd/auth.ts` (if needed):
@@ -243,9 +243,9 @@ vercel: async () => {
 ```
 
 **Complex providers with environment config:**
-- `amazon-bedrock` (lines 182-324) - AWS credential handling
-- `google-vertex` (lines 347-363) - GCP project configuration
-- `gitlab` (lines 412-461) - OAuth and custom model loading
+- `amazon-bedrock` - AWS credential handling (search for "amazon-bedrock:" in provider.ts)
+- `google-vertex` - GCP project configuration (search for "google-vertex:" in provider.ts)
+- `gitlab` - OAuth and custom model loading (search for "gitlab:" in provider.ts)
 
 ### Finding More Examples
 

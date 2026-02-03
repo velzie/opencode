@@ -26,8 +26,25 @@ This guide explains how contributors add new models and providers to OpenCode, i
 OpenCode uses the [AI SDK](https://ai-sdk.dev/) and [Models.dev](https://models.dev) to support 75+ LLM providers. The architecture involves:
 
 1. **Models.dev** - A centralized registry of provider and model metadata (pricing, capabilities, limits)
-2. **OpenCode Repository** - Provider integration code and UI components
+2. **OpenCode Repository** - Provider integration code and UI components  
 3. **AI SDK Packages** - npm packages that handle the actual API communication
+
+### How npm Packages Work with Providers
+
+**Key concept:** The API URL and communication logic comes from the npm package, not OpenCode.
+
+When you add a provider to OpenCode:
+- **Custom loader in OpenCode** - Handles authentication, configuration, environment variables
+- **npm package** - Contains the API URL, request formatting, response parsing, all the API logic
+- **Dynamic installation** - OpenCode installs the npm package at runtime if not bundled
+
+**Example flow:**
+1. OpenCode sees a model needs `@mymediset/sap-ai-provider`
+2. OpenCode installs the package: `await BunProc.install("@mymediset/sap-ai-provider", "latest")`
+3. OpenCode imports the package and calls its `create*` function
+4. The npm package handles all API communication
+
+**This is why PRs are small** - you only add the OpenCode integration, not the entire API client.
 
 ## Models.dev Integration
 
@@ -67,6 +84,43 @@ This data is:
 - You're only adding OpenCode integration code (provider works via custom config)
 - You're adding a custom/internal provider for personal use
 - The provider is already on models.dev and you just need OpenCode integration
+
+### Where Does the API URL Come From?
+
+**Important:** When you add a provider to OpenCode, the API URL doesn't come from your PR - it comes from the npm package.
+
+**For providers using existing AI SDK packages:**
+- `@ai-sdk/openai` - Knows OpenAI's API URL
+- `@ai-sdk/anthropic` - Knows Anthropic's API URL
+- `@ai-sdk/openai-compatible` - You specify `baseURL` in options
+
+**For providers with custom npm packages:**
+- SAP AI Core uses `@mymediset/sap-ai-provider` - the package knows SAP's API URL
+- The npm package is published separately on npm registry
+- OpenCode dynamically installs it at runtime
+- Your PR just tells OpenCode which npm package to use
+
+**Example from SAP AI Core:**
+```typescript
+// In OpenCode (your PR):
+"sap-ai-core": async () => {
+  return {
+    autoload: !!serviceKey,
+    options: { serviceKey, deploymentId, resourceGroup },
+  }
+},
+
+// In models.dev or provider config:
+{
+  "npm": "@mymediset/sap-ai-provider"  // <-- This tells OpenCode which package to use
+}
+
+// OpenCode then:
+// 1. Installs: npm install @mymediset/sap-ai-provider
+// 2. Imports the package
+// 3. Calls createSapAiCore({ ...options })
+// 4. The package handles all API communication
+```
 
 ## Adding a Provider
 
@@ -203,25 +257,37 @@ This approach requires no PRs and is documented in the [providers documentation]
 
 **Key point:** SAP AI Core is **NOT on models.dev** - this was a single PR to OpenCode only
 
+**How does it work without bundling?**
+
+The PR is small because it doesn't include the API logic - that comes from the npm package `@mymediset/sap-ai-provider`. Here's how:
+
+1. **Custom loader in OpenCode** (the PR):
+   ```typescript
+   "sap-ai-core": async () => {
+     const auth = await Auth.get("sap-ai-core")
+     const serviceKey = Env.get("SAP_AI_SERVICE_KEY") || 
+       (auth?.type === "api" ? auth.key : undefined)
+     
+     return {
+       autoload: !!serviceKey,
+       options: serviceKey ? { serviceKey, deploymentId, resourceGroup } : {},
+     }
+   },
+   ```
+
+2. **npm package handles API URL** (not in OpenCode):
+   - OpenCode dynamically installs `@mymediset/sap-ai-provider` at runtime
+   - The npm package contains all the API logic, URL, authentication
+   - See code at line 1058 in provider.ts: `await BunProc.install(model.api.npm, "latest")`
+
+3. **Provider gets associated with npm package** via models.dev or config:
+   - Models.dev would specify `"npm": "@mymediset/sap-ai-provider"` for the provider
+   - OR the custom loader can specify it in provider options
+   - OpenCode loads the package and calls its `create*` function
+
 **Files changed:**
 - `packages/opencode/src/provider/provider.ts` - Added custom loader with environment config
 - `packages/web/src/content/docs/providers.mdx` - Added setup documentation
-
-**Code added:**
-```typescript
-"sap-ai-core": async () => {
-  const auth = await Auth.get("sap-ai-core")
-  const serviceKey = Env.get("SAP_AI_SERVICE_KEY") || 
-    (auth?.type === "api" ? auth.key : undefined)
-  const deploymentId = Env.get("SAP_AI_DEPLOYMENT_ID") || "d65d81e7c077e583"
-  const resourceGroup = Env.get("SAP_AI_RESOURCE_GROUP") || "default"
-
-  return {
-    autoload: !!serviceKey,
-    options: serviceKey ? { serviceKey, deploymentId, resourceGroup } : {},
-  }
-},
-```
 
 **Why this is a perfect example:**
 - ✅ Provider added with single PR to OpenCode
@@ -229,6 +295,7 @@ This approach requires no PRs and is documented in the [providers documentation]
 - ✅ Works perfectly in OpenCode - provides access to 40+ models
 - ✅ Merged successfully
 - ✅ Shows the standard OpenCode-only pattern
+- ✅ Demonstrates npm package integration (API URL comes from package, not OpenCode)
 - ✅ Demonstrates environment-based configuration
 
 ### GitLab Provider Update (Merged)

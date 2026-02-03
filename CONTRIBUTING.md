@@ -5,7 +5,7 @@ We want to make it easy for you to contribute to OpenCode. Here are the most com
 - Bug fixes
 - Additional LSPs / Formatters
 - Improvements to LLM performance
-- Support for new providers
+- Support for new providers (see [Adding Providers and Models Guide](./ADDING_PROVIDERS_MODELS.md))
 - Fixes for environment-specific quirks
 - Missing standard behavior
 - Documentation improvements

@@ -64,7 +64,43 @@ Based on investigation of the OpenCode repository and example PRs, here's what I
 }
 ```
 
-### 3. Real Example: OpenRouter and Vercel Providers
+### 3. Real Example: SAP AI Core Provider (NOT on models.dev)
+
+**PR #5023** - The perfect example of OpenCode-only provider addition
+
+**What it does:** Adds SAP AI Core as a completely NEW provider to OpenCode
+
+**Key facts:**
+- ✅ Merged on December 4, 2025
+- ✅ Provider is **NOT on models.dev** (verified)
+- ✅ Single PR to OpenCode only
+- ✅ Provides access to 40+ models from OpenAI, Anthropic, Google, Amazon, Meta, Mistral, AI21
+- ✅ Works perfectly without models.dev
+
+**Code pattern:**
+```typescript
+"sap-ai-core": async () => {
+  const auth = await Auth.get("sap-ai-core")
+  const serviceKey = Env.get("SAP_AI_SERVICE_KEY") || 
+    (auth?.type === "api" ? auth.key : undefined)
+  const deploymentId = Env.get("SAP_AI_DEPLOYMENT_ID") || "d65d81e7c077e583"
+  const resourceGroup = Env.get("SAP_AI_RESOURCE_GROUP") || "default"
+
+  return {
+    autoload: !!serviceKey,
+    options: serviceKey ? { serviceKey, deploymentId, resourceGroup } : {},
+  }
+},
+```
+
+**View PR:** https://github.com/anomalyco/opencode/pull/5023
+
+**This proves:**
+- Providers do NOT need models.dev to work in OpenCode
+- Single-PR approach is common and effective
+- OpenCode-only integration gives full functionality
+
+### OpenRouter and Vercel Providers
 
 These are REAL examples from the codebase showing the standard OpenCode-only pattern (search for these in `packages/opencode/src/provider/provider.ts`):
 

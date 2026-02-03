@@ -7,10 +7,10 @@ This guide explains how contributors add new models and providers to OpenCode, i
 **Want to add a provider?** Here are your options:
 
 1. **Just for you?** → Use [custom provider config](#approach-3-custom-provider-config-only) (no PR needed)
-2. **Provider exists on models.dev?** → [Single PR to OpenCode](#approach-1-opencode-only-single-pr)
-3. **Completely new provider?** → [Two PRs](#approach-2-modelsdev--opencode-two-prs) (models.dev first, then OpenCode)
+2. **Want it in OpenCode?** → [Single PR to OpenCode](#approach-1-opencode-only-single-pr) (MOST COMMON)
+3. **Need it on models.dev website?** → [Two PRs](#approach-2-modelsdev--opencode-two-prs) (models.dev first, then OpenCode - RARE)
 
-**Real Examples:** See the [anomalyco/opencode repository](https://github.com/anomalyco/opencode) for actual merged PRs adding providers.
+**Real Example:** [PR #5023 - SAP AI Core](https://github.com/anomalyco/opencode/pull/5023) shows how a provider was added with a single PR to OpenCode (NOT on models.dev, and didn't need to be).
 
 ## Table of Contents
 - [Overview](#overview)
@@ -192,6 +192,44 @@ Users can add providers without any code changes using `opencode.json`:
 This approach requires no PRs and is documented in the [providers documentation](https://opencode.ai/docs/providers#custom).
 
 ## Example PRs
+
+### Real Example: SAP AI Core Provider (Merged)
+
+**PR:** [anomalyco/opencode#5023](https://github.com/anomalyco/opencode/pull/5023) - "feat: Add SAP AI Core provider support"
+
+**Merged:** December 4, 2025
+
+**What it does:** Adds SAP AI Core as a completely new provider to OpenCode
+
+**Key point:** SAP AI Core is **NOT on models.dev** - this was a single PR to OpenCode only
+
+**Files changed:**
+- `packages/opencode/src/provider/provider.ts` - Added custom loader with environment config
+- `packages/web/src/content/docs/providers.mdx` - Added setup documentation
+
+**Code added:**
+```typescript
+"sap-ai-core": async () => {
+  const auth = await Auth.get("sap-ai-core")
+  const serviceKey = Env.get("SAP_AI_SERVICE_KEY") || 
+    (auth?.type === "api" ? auth.key : undefined)
+  const deploymentId = Env.get("SAP_AI_DEPLOYMENT_ID") || "d65d81e7c077e583"
+  const resourceGroup = Env.get("SAP_AI_RESOURCE_GROUP") || "default"
+
+  return {
+    autoload: !!serviceKey,
+    options: serviceKey ? { serviceKey, deploymentId, resourceGroup } : {},
+  }
+},
+```
+
+**Why this is a perfect example:**
+- ✅ Provider added with single PR to OpenCode
+- ✅ Provider is NOT on models.dev (and doesn't need to be)
+- ✅ Works perfectly in OpenCode - provides access to 40+ models
+- ✅ Merged successfully
+- ✅ Shows the standard OpenCode-only pattern
+- ✅ Demonstrates environment-based configuration
 
 ### GitLab Provider Update (Merged)
 

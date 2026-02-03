@@ -333,6 +333,17 @@ export namespace Provider {
         },
       }
     },
+    puter: async () => {
+      return {
+        autoload: false,
+        options: {
+          headers: {
+            "HTTP-Referer": "https://opencode.ai/",
+            "X-Title": "opencode",
+          },
+        },
+      }
+    },
     vercel: async () => {
       return {
         autoload: false,

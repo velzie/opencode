@@ -23,6 +23,7 @@ export const iconNames = [
   "sap-ai-core",
   "requesty",
   "poe",
+  "puter",
   "perplexity",
   "ovhcloud",
   "openrouter",

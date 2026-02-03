@@ -10,7 +10,7 @@ This guide explains how contributors add new models and providers to OpenCode, i
 2. **Provider exists on models.dev?** → [Single PR to OpenCode](#approach-1-opencode-only-single-pr)
 3. **Completely new provider?** → [Two PRs](#approach-2-modelsdev--opencode-two-prs) (models.dev first, then OpenCode)
 
-**Example:** See [PR #1 - Adding Puter Provider](https://github.com/velzie/opencode/pull/1) for a complete example.
+**Real Examples:** See the [anomalyco/opencode repository](https://github.com/anomalyco/opencode) for actual merged PRs adding providers.
 
 ## Table of Contents
 - [Overview](#overview)
@@ -74,10 +74,18 @@ There are **two main approaches** depending on whether the provider needs models
 
 ### Approach 1: OpenCode-Only (Single PR)
 
-Use this approach when:
-- The provider already exists on models.dev
-- You're adding a niche/custom provider for configuration-based use
-- You want to add provider-specific features (custom headers, auth flows)
+Use this approach when adding a provider that **is NOT on models.dev** but you want to integrate it into OpenCode.
+
+**When to use:**
+- Provider does NOT exist on models.dev 
+- You're adding OpenCode-specific integration (custom headers, special auth)
+- You want the provider to appear in `/connect` and work with OpenCode
+
+**Important:** This approach means:
+- ✅ Provider works in OpenCode
+- ✅ Appears in `/connect` provider list
+- ❌ Models won't have automatic pricing/capability data
+- ❌ Won't appear on https://models.dev website
 
 **Steps:**
 
@@ -85,8 +93,8 @@ Use this approach when:
 
 ```typescript
 const CUSTOM_LOADERS: Record<string, CustomLoader> = {
-  // ... existing loaders
-  puter: async () => {
+  // ... existing loaders like openrouter, vercel
+  newprovider: async () => {
     return {
       autoload: false,
       options: {
@@ -100,11 +108,16 @@ const CUSTOM_LOADERS: Record<string, CustomLoader> = {
 }
 ```
 
+**Real examples in the codebase:**
+- `openrouter` - Lines 325-335
+- `vercel` - Lines 336-346
+- Look at `packages/opencode/src/provider/provider.ts` for more
+
 2. **Add auth hints** in `packages/opencode/src/cli/cmd/auth.ts` (if needed):
 
 ```typescript
-if (provider === "puter") {
-  prompts.log.info("Get your API key at https://puter.com/?action=copyauth")
+if (provider === "newprovider") {
+  prompts.log.info("Get your API key at https://newprovider.com/api-keys")
 }
 ```
 
@@ -116,30 +129,36 @@ if (provider === "puter") {
    - Add provider section with setup instructions
    - Include example configuration
 
-**Example PR:** [#1 - feat(provider): Add Puter integration](https://github.com/velzie/opencode/pull/1)
-
 ### Approach 2: Models.dev + OpenCode (Two PRs)
 
-Use this approach when adding a completely new provider that should have:
-- Full model catalog with pricing
-- Capability tracking
-- Official support in the UI
+Use this approach when adding a provider that **needs full metadata on models.dev**.
 
-**Steps:**
+**When to use:**
+- Completely new provider that should appear on https://models.dev
+- You want automatic pricing information for all models
+- You want model capabilities tracked (reasoning, attachments, etc.)
+- Official/mainstream provider that others will use
 
-1. **First PR: Submit to Models.dev**
-   - Fork the models.dev repository
+**Process:**
+
+1. **First PR: Submit to models.dev repository**
+   - Fork https://github.com/openrouterai/models (models.dev repo)
    - Add provider and model definitions following their schema
-   - Submit PR for review
-   - Wait for approval and merge
+   - Submit PR for review to models.dev
+   - Wait for approval and merge (3-7 days)
 
-2. **Second PR: OpenCode Integration**
-   - Once models.dev is updated, OpenCode will automatically pull the data
-   - Add any custom loader logic if needed (headers, auth, etc.)
+2. **Second PR: OpenCode Integration** (AFTER models.dev merge)
+   - OpenCode will automatically pull the data from models.dev
+   - Add custom loader in provider.ts if needed (headers, auth, etc.)
    - Add provider icon and UI components
    - Update documentation
 
-**When to use this:** Adding major new providers (e.g., new AI company, new model family)
+**Timeline:** 1-2 weeks total
+
+**Note:** Most community contributions are actually **Approach 1** (OpenCode-only) because:
+- Many providers don't need to be on models.dev
+- OpenCode-only integration is faster (single PR, 1-3 days)
+- You can still use the provider fully, just without automatic metadata
 
 ### Approach 3: Custom Provider (Config-Only)
 
@@ -174,31 +193,70 @@ This approach requires no PRs and is documented in the [providers documentation]
 
 ## Example PRs
 
-### PR #1: Puter Provider Integration
+### GitLab Provider Update (Merged)
 
-**What it does:** Adds Puter as a provider with custom headers
+**PR:** [anomalyco/opencode#11818](https://github.com/anomalyco/opencode/pull/11818)
+
+**What it does:** Adds User-Agent headers for GitLab AI Gateway
 
 **Files changed:**
-- `packages/opencode/src/provider/provider.ts` - Custom loader with HTTP referer
-- `packages/ui/src/components/provider-icons/sprite.svg` - Puter icon SVG
-- `packages/ui/src/components/provider-icons/types.ts` - Icon registration
-- `packages/opencode/src/cli/cmd/auth.ts` - Auth hint with URL
+- `packages/opencode/src/provider/provider.ts` - Updated GitLab custom loader
+- `packages/opencode/package.json` - Bumped package version
+- `bun.lock` - Lock file update
 
 **Key points:**
-- Single PR to OpenCode repository
-- Follows standard provider pattern (like Vercel, Cloudflare, OpenRouter)
-- No models.dev changes needed
-- Provider accessible via `/connect` → puter
+- Modifies existing provider (GitLab) that's already in OpenCode
+- Adds custom headers via options
+- Example of enhancing an existing provider integration
 
-**View:** https://github.com/velzie/opencode/pull/1
+### Provider Pattern Examples in Codebase
 
-### Other Examples to Study
+Look at `packages/opencode/src/provider/provider.ts` for real examples:
 
-While this repository is new, you can study similar patterns in the main OpenCode ecosystem:
+**Simple providers with custom headers:**
+```typescript
+// Lines 325-335: OpenRouter
+openrouter: async () => {
+  return {
+    autoload: false,
+    options: {
+      headers: {
+        "HTTP-Referer": "https://opencode.ai/",
+        "X-Title": "opencode",
+      },
+    },
+  }
+},
 
-- Look for providers like `vercel`, `cloudflare`, `openrouter` in `provider.ts`
-- Check how bundled providers use `BUNDLED_PROVIDERS` object
-- Study custom loaders that add headers or modify options
+// Lines 336-346: Vercel  
+vercel: async () => {
+  return {
+    autoload: false,
+    options: {
+      headers: {
+        "http-referer": "https://opencode.ai/",
+        "x-title": "opencode",
+      },
+    },
+  }
+},
+```
+
+**Complex providers with environment config:**
+- `amazon-bedrock` (lines 182-324) - AWS credential handling
+- `google-vertex` (lines 347-363) - GCP project configuration
+- `gitlab` (lines 412-461) - OAuth and custom model loading
+
+### Finding More Examples
+
+Search the real OpenCode repository:
+```bash
+# Find provider-related PRs
+gh pr list --repo anomalyco/opencode --search "provider" --state merged
+
+# Look at recent provider changes
+git log --oneline -- packages/opencode/src/provider/provider.ts
+```
 
 ## Process Summary
 
@@ -207,26 +265,47 @@ While this repository is new, you can study similar patterns in the main OpenCod
 ```
 Want to add a provider to OpenCode?
 │
-├─ Is it already on models.dev?
-│  ├─ Yes → Single PR to OpenCode (add integration code)
-│  └─ No → Do you need full model metadata?
-│     ├─ Yes → Two PRs (models.dev first, then OpenCode)
-│     └─ No → Single PR to OpenCode (custom loader only)
+├─ Do you need the provider on models.dev website?
+│  ├─ Yes → Two PRs (models.dev first, then OpenCode)
+│  │        Timeline: 1-2 weeks
+│  │        Gets: Pricing data, capability tracking, public listing
+│  │
+│  └─ No → Single PR to OpenCode only (MOST COMMON)
+│           Timeline: 1-3 days
+│           Gets: Works in OpenCode, appears in /connect
+│           Missing: Auto pricing/capabilities (but can add manually)
 │
 └─ Just for personal use?
    └─ No PR needed (use opencode.json custom provider)
 ```
 
-### Typical Timeline
+### Reality Check
 
-**OpenCode-only PR:**
-- 1-3 days for review and merge
-- Available immediately after merge
+**Most provider additions are Approach 1 (OpenCode-only)** because:
+- Faster (single PR, days not weeks)
+- Provider works perfectly in OpenCode without models.dev
+- Can manually specify model limits/pricing in config if needed
+- models.dev is optional for most use cases
 
-**Models.dev + OpenCode:**
+**Only use Approach 2 (models.dev + OpenCode) if:**
+- You're adding a major mainstream provider
+- You want it listed on https://models.dev website
+- You need automatic pricing for all users
+- You're willing to wait 1-2 weeks for two PR reviews
+
+**Typical Timeline**
+
+**OpenCode-only PR (Approach 1):**
+- Submit PR: Day 1
+- Review/feedback: 1-3 days  
+- Merge and available: Day 3-4
+- Total: ~1 week max
+
+**Models.dev + OpenCode (Approach 2):**
 - Models.dev PR: 3-7 days (external repository)
+- Wait for models.dev deployment
 - OpenCode PR: 1-3 days after models.dev merge
-- Total: ~1-2 weeks
+- Total: 1-2 weeks minimum
 
 ### What Makes a Good Provider PR?
 
@@ -269,13 +348,14 @@ grep -r "myai" packages/opencode/src/provider/
 
 ### Step 2: Determine Approach
 
-- **MyAI exists on models.dev?** → Go to Step 3 (OpenCode-only PR)
-- **MyAI not on models.dev AND you want full metadata?** → Submit to models.dev first
-- **Just want to use it yourself?** → Skip to custom config (Step 7)
+- **Want it on models.dev website?** → Go to models.dev repo first (rare)
+- **Just want it working in OpenCode?** → Go to Step 3 (COMMON - single PR to OpenCode)
+- **Just for personal use?** → Skip to custom config (Step 10)
 
 ### Step 3: Fork and Clone
 
 ```bash
+# Fork https://github.com/anomalyco/opencode on GitHub first
 git clone https://github.com/YOUR_USERNAME/opencode.git
 cd opencode
 git checkout -b feat/add-myai-provider
@@ -377,8 +457,9 @@ git add .
 git commit -m "feat(provider): Add MyAI integration"
 git push origin feat/add-myai-provider
 
-# Open PR on GitHub
-# Reference PR #1 as an example
+# Open PR on GitHub to anomalyco/opencode
+# Reference similar PRs like #11818
+# Link to an issue describing why you're adding the provider
 ```
 
 ### Step 10: Alternative - Custom Config (No PR)

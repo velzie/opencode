@@ -64,13 +64,13 @@ Based on investigation of the OpenCode repository and example PRs, here's what I
 }
 ```
 
-### 3. Real Example: Puter Provider Integration
+### 3. Real Example: OpenRouter and Vercel Providers
 
-The Puter PR demonstrates the standard pattern:
+These are REAL examples from the codebase showing the standard OpenCode-only pattern:
 
-**Added custom loader with headers:**
+**OpenRouter (provider.ts lines 325-335):**
 ```typescript
-puter: async () => {
+openrouter: async () => {
   return {
     autoload: false,
     options: {
@@ -83,29 +83,64 @@ puter: async () => {
 },
 ```
 
-**Added auth hint:**
+**Vercel (provider.ts lines 336-346):**
 ```typescript
-if (provider === "puter") {
-  prompts.log.info("Get your API key at https://puter.com/?action=copyauth")
-}
+vercel: async () => {
+  return {
+    autoload: false,
+    options: {
+      headers: {
+        "http-referer": "https://opencode.ai/",
+        "x-title": "opencode",
+      },
+    },
+  }
+},
 ```
 
-**This follows the same pattern as other providers like Vercel, Cloudflare, and OpenRouter.**
+**These providers:**
+- ❌ Are NOT necessarily on models.dev
+- ✅ Work perfectly in OpenCode
+- ✅ Appear in `/connect` provider list
+- ✅ Can use any OpenAI-compatible models
+- ✅ Added with single PR to OpenCode
+
+**This is the pattern most contributors follow.**
 
 ## Answer to Original Question
 
 > "Do they go through models.dev? Two PRs?"
 
-**Answer:** It depends on the provider:
+**Answer:** Usually NOT! 
 
-1. **If provider exists on models.dev:** Single PR to OpenCode
-2. **If provider is new AND you want full metadata:** Two PRs (models.dev first, then OpenCode)
-3. **If just for personal use:** No PR needed (config-only)
+**The reality:**
+1. **Most providers are added with a SINGLE PR to OpenCode only**
+   - Provider does NOT need to be on models.dev to work
+   - Faster process (1-3 days vs 1-2 weeks)
+   - Examples: openrouter, vercel (see provider.ts lines 325-346)
 
-Most community contributions are **single PR** because:
-- Many providers already exist on models.dev
-- Contributors just need to add integration code to OpenCode
-- Custom loaders handle provider-specific requirements (headers, auth, etc.)
+2. **Two PRs (models.dev + OpenCode) is RARE**
+   - Only for major providers you want listed on https://models.dev website
+   - Needs automatic pricing/capability data for all users
+   - Takes 1-2 weeks minimum
+
+3. **Common misconception:**
+   - ❌ "Provider must be on models.dev to work in OpenCode"
+   - ✅ Actually: OpenCode can work with ANY provider via custom loaders
+   - ✅ models.dev is optional - just provides metadata
+
+**Example workflow (OpenCode-only):**
+- Add custom loader to `provider.ts` (like openrouter/vercel do)
+- Add provider icon
+- Add auth hints  
+- Update docs
+- Submit single PR → Merged in days
+
+**When you DO need models.dev:**
+- Want provider on https://models.dev website
+- Need pricing data auto-populated for users
+- Adding official/mainstream provider
+- Submit PR to models.dev repo first, THEN OpenCode
 
 ## Documentation Created
 
@@ -151,7 +186,9 @@ I've created comprehensive documentation at:
 
 ## References
 
-- **Example PR:** https://github.com/velzie/opencode/pull/1
+- **Real OpenCode Repo:** https://github.com/anomalyco/opencode
+- **Provider Code:** `packages/opencode/src/provider/provider.ts`
+- **Example PR (GitLab):** https://github.com/anomalyco/opencode/pull/11818
 - **Models.dev:** https://models.dev
 - **Full Guide:** `ADDING_PROVIDERS_MODELS.md`
 - **Contributing:** `CONTRIBUTING.md`
